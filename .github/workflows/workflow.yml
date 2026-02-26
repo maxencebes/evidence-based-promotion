@@ -16,7 +16,7 @@ jobs:
   evidence-based-promotion:
     runs-on: ubuntu-latest
     env:
-      DOCKER_REPO:  'maxence-docker-dev-local'
+      DOCKER_REPO:  'maxence-oci-dev-local'
       IMAGE_NAME: 'sample-app:${{ github.run_number }}'
       JF_URL: https://${{ vars.JF_HOST }}/
       JF_PROJECT: ${{ vars.JF_PROJECT_KEY }}
