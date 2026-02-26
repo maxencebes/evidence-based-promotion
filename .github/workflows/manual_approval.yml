@@ -1,8 +1,5 @@
 name: manual_approval
 
-env:
-  JFROG_CLI_BUILD_PROJECT: ${{ vars.PROJECT_NAME }}
-
 on:
   workflow_dispatch:
     inputs:
@@ -10,7 +7,6 @@ on:
         required: true
         description: app version to validate
         type: string
-
 
 permissions:
   id-token: write

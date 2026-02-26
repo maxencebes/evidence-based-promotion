@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0",
+  "type": "artifact",
+  "result": {
+    "subjectRepoPath": "maxence-oci-dev-local/sample-app/8/list.manifest.json",
+    "evidence": [
+      {
+        "predicateSlug": "slsa-provenance",
+        "predicateType": "https://slsa.dev/provenance/v1",
+        "downloadPath": "maxence-oci-dev-local/.evidence/8ece09c8d3ecfec41550eef1dbf95788ad85eb571840a9519231b861f74e2c6d/bb4a6d2a859bffe71338af2f1ffbe459492ff87be97d841e89474f985aa37764/slsa-provenance-1772140362357-5780b4be.sigstore.json",
+        "verified": true,
+        "subject": {
+          "sha256": "bb4a6d2a859bffe71338af2f1ffbe459492ff87be97d841e89474f985aa37764"
+        },
+        "createdBy": "jfrt@01hq5hg1fgev1y0dbhjy2n0f6s",
+        "createdAt": "2026-02-26T21:12:42.329Z"
+      },
+      {
+        "predicateSlug": "spdx-document",
+        "predicateType": "https://spdx.dev/Document/v2.3",
+        "downloadPath": "maxence-oci-dev-local/.evidence/8ece09c8d3ecfec41550eef1dbf95788ad85eb571840a9519231b861f74e2c6d/bb4a6d2a859bffe71338af2f1ffbe459492ff87be97d841e89474f985aa37764/spdx-document-1772140376151-7a5ac5a8.sigstore.json",
+        "verified": true,
+        "subject": {
+          "sha256": "bb4a6d2a859bffe71338af2f1ffbe459492ff87be97d841e89474f985aa37764"
+        },
+        "createdBy": "jfrt@01hq5hg1fgev1y0dbhjy2n0f6s",
+        "createdAt": "2026-02-26T21:12:56.006Z"
+      },
+      {
+        "predicateSlug": "approval",
+        "predicateType": "https://jfrog.com/evidence/approval/v1",
+        "downloadPath": "maxence-oci-dev-local/.evidence/8ece09c8d3ecfec41550eef1dbf95788ad85eb571840a9519231b861f74e2c6d/bb4a6d2a859bffe71338af2f1ffbe459492ff87be97d841e89474f985aa37764/approval-1772141604272-183e0fd8.json",
+        "verified": true,
+        "signingKey": {
+          "alias": "evd-key-20260225-165218"
+        },
+        "subject": {
+          "sha256": "bb4a6d2a859bffe71338af2f1ffbe459492ff87be97d841e89474f985aa37764"
+        },
+        "createdBy": "maxenceb",
+        "createdAt": "2026-02-26T21:33:23.799Z"
+      }
+    ]
+  }
+}
