@@ -63,3 +63,18 @@ jobs:
           subject-name: ${{ vars.JF_HOST }}/${{ env.DOCKER_REPO }}/sample-app
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ vars.JF_HOST }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}
+          format: 'spdx-json'
+          output-file: 'sbom.spdx.json'
+
+      - name: Attest SBOM
+        uses: actions/attest-sbom@v1
+        with:
+          subject-name: ${{ vars.JF_HOST }}/${{ env.DOCKER_REPO }}/sample-app
+          subject-digest: ${{ steps.build.outputs.digest }}
+          sbom-path: 'sbom.spdx.json'
+          push-to-registry: true
