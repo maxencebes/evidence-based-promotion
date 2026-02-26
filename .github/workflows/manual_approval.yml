@@ -34,6 +34,8 @@ jobs:
           oidc-audience: maxenceb-github
 
       - name: Evidence on release bundle
+        env:
+          PRIVATE_KEY_CONTENT: ${{ secrets.EVIDENCE_PRIVATE_KEY }}
         run: |
           echo '{ "actor": "${{ github.actor }}", "status": "approved" }' > approval.json
           
@@ -43,8 +45,10 @@ jobs:
           jf evd create --predicate approval.json \
             --predicate-type https://jfrog.com/evidence/approval/v1 \
             --package-name sample-app \
-            --package-version  ${{ inputs.version }}\
+            --package-version  ${{ inputs.version }} \
             --package-repo-name maxence-oci-dev-local \
             --key evidence.key \
             --key-alias evd-key-20260225-165218
+          
+          rm evidence.key
 
