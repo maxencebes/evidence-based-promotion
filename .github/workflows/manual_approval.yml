@@ -8,7 +8,7 @@ on:
     inputs:
       version:
         required: true
-        description: Release bundle version to validate
+        description: app version to validate
         type: string
 
 
@@ -19,13 +19,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      RELEASE_NAME: 'rlm-evidence'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.MY_GITHUB_TOKEN }}
 
       - name: Setup JFrog CLI
         id: setup-cli
@@ -34,12 +30,20 @@ jobs:
           JF_URL: https://${{ secrets.JF_HOST }}
         with:
           oidc-provider-name: github-maxenceb
-          disable-auto-build-publish: true
+          oidc-audience: maxenceb-github
 
       - name: Evidence on release bundle
         run: |
-          echo '{ "actor": "${{ github.actor }}", "status": "approved" }' > rbv2_evidence.json
+          echo '{ "actor": "${{ github.actor }}", "status": "approved" }' > approval.json
           
-          jf evd create --release-bundle ${{ env.RELEASE_NAME }} --release-bundle-version ${{ inputs.version }} \
-            --predicate ./rbv2_evidence.json --predicate-type https://jfrog.com/evidence/approval/v1 \
-            --key "${{ secrets.PRIVATE_KEY }}" --key-alias maxenceb --project ${{ vars.PROJECT_NAME }}
+          echo "$PRIVATE_KEY_CONTENT" > evidence.key
+          chmod 600 evidence.key
+          
+          jf evd create --predicate approval.json \
+            --predicate-type https://jfrog.com/evidence/approval/v1 \
+            --package-name sample-app \
+            --package-version  ${{ inputs.version }}\
+            --package-repo-name maxence-oci-dev-local \
+            --key evidence.key \
+            --key-alias evd-key-20260225-165218
+
