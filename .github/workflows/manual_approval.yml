@@ -1,0 +1,45 @@
+name: manual_approval
+
+env:
+  JFROG_CLI_BUILD_PROJECT: ${{ vars.PROJECT_NAME }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        description: Release bundle version to validate
+        type: string
+
+
+permissions:
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_NAME: 'rlm-evidence'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.MY_GITHUB_TOKEN }}
+
+      - name: Setup JFrog CLI
+        id: setup-cli
+        uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: https://${{ secrets.JF_HOST }}
+        with:
+          oidc-provider-name: github-maxenceb
+          disable-auto-build-publish: true
+
+      - name: Evidence on release bundle
+        run: |
+          echo '{ "actor": "${{ github.actor }}", "status": "approved" }' > rbv2_evidence.json
+          
+          jf evd create --release-bundle ${{ env.RELEASE_NAME }} --release-bundle-version ${{ inputs.version }} \
+            --predicate ./rbv2_evidence.json --predicate-type https://jfrog.com/evidence/approval/v1 \
+            --key "${{ secrets.PRIVATE_KEY }}" --key-alias maxenceb --project ${{ vars.PROJECT_NAME }}

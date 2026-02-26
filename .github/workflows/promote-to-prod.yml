@@ -1,0 +1,80 @@
+name: promote_to_prod
+
+env:
+  JFROG_CLI_BUILD_PROJECT: ${{ vars.PROJECT_NAME }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        description: Release bundle version to promote
+        type: string
+
+permissions:
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_NAME: 'rlm-evidence'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.MY_GITHUB_TOKEN }}
+
+      - name: Setup JFrog CLI
+        id: setup-cli
+        uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: https://${{ secrets.JF_HOST }}
+        with:
+          oidc-provider-name: github-maxenceb
+          disable-auto-build-publish: true
+
+      - name: Setup OPA
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: latest
+
+      - name: Query evidence API
+        run : |
+          curl --location -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ${{ steps.setup-cli.outputs.oidc-token }}" https://${{ secrets.JF_HOST }}/onemodel/api/v1/graphql -d '{"query": "{\n  releaseBundleVersion {\n    getVersion(repositoryKey: \"${{ vars.PROJECT_NAME }}-release-bundles-v2\", name: \"${{ env.RELEASE_NAME }}\", version: \"${{ inputs.version }}\") {\n      createdBy\n      createdAt\n      evidenceConnection {\n        edges {\n          cursor\n          node {\n            path\n            name\n            predicateSlug\n          }\n        }\n      }\n    }\n  }\n}"}' > evidence-graph.json
+          cat ./evidence-graph.json
+
+      - name: Check mandatory evidence
+        run: |
+          opa eval --input ./evidence-graph.json --data ./policy/policy.rego "data.policy.output" | jq '.result[0].expressions[0].value'  > policy.json
+          cat policy.json
+          result=$(jq .approved ./policy.json)
+          
+          if [ $result == "true" ]; then
+            echo "All mandatory evidence have been found"
+          else
+            echo "Fail promotion policy check"
+            exit 1
+          fi
+
+      - name: Check minimal sonar coverage
+        run: |
+          
+          read path name <<< $(jq -r '.data.releaseBundleVersion.getVersion.evidenceConnection.edges[] | select(.node.predicateSlug == "sonar-scan") | [.node.path, .node.name] | @tsv' ./evidence-graph.json)
+          
+          curl --location -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ${{ steps.setup-cli.outputs.oidc-token }}" https://${{ secrets.JF_HOST }}/onemodel/api/v1/graphql -d '{"query": "{ evidence { getEvidence(repositoryKey: \"maxence-release-bundles-v2\", name: \"sonar-scan-1746623354391-4edc0374-426c-46ff-93f2-913b3174688f.json\", path: \"rlm-evidence/33/release-bundle.json.evd\") { downloadPath subject { repositoryKey path name } sha256 predicateSlug predicateCategory predicateType predicate createdAt createdBy verified signingKey { alias } } }}"}' > sonar_predicate.json
+          
+          coverage=$(jq -r '.data.evidence.getEvidence.predicate.coverage' ./sonar_predicate.json)
+          echo $coverage
+          
+          if [ "$coverage" < "${{ env.EXPECTED_COVERAGE }}" ]; then
+            echo "The expected coverage is not reached or null"
+            exit 1
+          else
+            echo "Coverage test ok"
+          fi
+
+      - name: Promote release bundle to prod
+        run: |
+          jf rbp --signing-key=${{ vars.SIGNING_KEY }} ${{ env.RELEASE_NAME }} ${{ inputs.version }} PROD --sync

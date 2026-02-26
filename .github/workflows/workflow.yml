@@ -1,0 +1,58 @@
+name: evidence-based-promotion
+
+env:
+  JFROG_CLI_BUILD_PROJECT: ${{ vars.PROJECT_KEY }}
+
+on: [workflow_dispatch]
+
+permissions:
+  id-token: write
+  attestations: write
+  security-events: write
+  actions: read
+  packages: write
+
+jobs:
+  evidence-based-promotion:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_REPO:  'maxence-docker-dev-local'
+      IMAGE_NAME: 'sample-app:${{ github.run_number }}'
+      JF_URL: https://${{ vars.JF_HOST }}/
+      JF_PROJECT: ${{ vars.JF_PROJECT_KEY }}
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Setup JFrog CLI
+        id: setup-cli
+        uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: https://${{ vars.JF_HOST }}/
+          JF_PROJECT: ${{ vars.JF_PROJECT_KEY }}
+        with:
+          oidc-provider-name: github-maxenceb
+          oidc-audience: maxenceb-github
+
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate Docker
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.JF_HOST }}
+          username: ${{ steps.setup-cli.outputs.oidc-user }}
+          password: ${{ steps.setup-cli.outputs.oidc-token }}
+
+            # docker image build
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v6
+        id: build
+        with:
+          push: true
+          provenance: true
+          platforms: linux/amd64 #, linux/arm64
+          tags: ${{ vars.JF_HOST }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}
