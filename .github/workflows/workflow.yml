@@ -78,3 +78,12 @@ jobs:
           subject-digest: ${{ steps.build.outputs.digest }}
           sbom-path: 'sbom.spdx.json'
           push-to-registry: true
+
+      - name: Publish build information
+        id: publish-build
+        run: |
+          echo "${{ vars.JF_HOST }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}" > metadata.json
+          jf rt build-docker-create ${{ env.DOCKER_REPO }} --image-file metadata.json
+          jf rt bp
+
+      
